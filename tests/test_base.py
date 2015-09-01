@@ -4,7 +4,7 @@ from mock import patch
 from pyramid.security import (
     Allow, Deny, Everyone, Authenticated, ALL_PERMISSIONS)
 
-from .base import ACLEncoderMixin, NEF_ACTIONS
+from nefertari_guards.base import ACLEncoderMixin, NEF_ACTIONS
 
 
 class TestACLEncoderMixin(object):

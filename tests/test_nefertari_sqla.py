@@ -1,6 +1,6 @@
 from mock import patch, Mock
 
-from .nefertari_sqla import ACLType
+from nefertari_guards.nefertari_sqla import ACLType
 
 
 class TestACLType(object):
