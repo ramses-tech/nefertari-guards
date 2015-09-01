@@ -1,7 +1,8 @@
 from sqlalchemy_utils.types.json import JSONType
 from nefertari_sqla.fields import ProcessableMixin, BaseField
+from nefertari_sqla.documents import TYPES_MAP
 
-from .base import ACLEncoderMixin
+from .base import ACLEncoderMixin, ACL_TYPE_MAPPING
 
 
 class ACLType(ACLEncoderMixin, JSONType):
@@ -29,3 +30,10 @@ class ACLField(ACLEncoderMixin, ProcessableMixin, BaseField):
             ACLField, self).process_type_args(kwargs)
         cleaned_kw['default'] = cleaned_kw.get('default') or []
         return type_args, type_kw, cleaned_kw
+
+
+ACL_TYPE_MAP = {ACLType: ACL_TYPE_MAPPING}
+EXTENDED_TYPES_MAP = dict(
+    list(TYPES_MAP.items()) +
+    list(ACL_TYPE_MAP.items())
+)

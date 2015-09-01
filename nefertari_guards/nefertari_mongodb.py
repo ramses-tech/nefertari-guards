@@ -1,7 +1,8 @@
-from nefertari_mongodb.fields import ProcessableMixin, BaseFieldMixin
 from mongoengine import fields
+from nefertari_mongodb.fields import ProcessableMixin, BaseFieldMixin
+from nefertari_sqla.documents import TYPES_MAP
 
-from .base import ACLEncoderMixin
+from .base import ACLEncoderMixin, ACL_TYPE_MAPPING
 
 
 class ACLField(ACLEncoderMixin, ProcessableMixin, BaseFieldMixin,
@@ -20,3 +21,10 @@ class ACLField(ACLEncoderMixin, ProcessableMixin, BaseFieldMixin,
             value = self.stringify_acl(value)
             self.validate_acl(value)
         return super(ACLField, self).__set__(instance, value)
+
+
+ACL_TYPE_MAP = {ACLField: ACL_TYPE_MAPPING}
+EXTENDED_TYPES_MAP = dict(
+    list(TYPES_MAP.items()) +
+    list(ACL_TYPE_MAP.items())
+)

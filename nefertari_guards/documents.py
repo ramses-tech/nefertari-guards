@@ -1,5 +1,8 @@
 import logging
 
+from ??? import ACLField, EXTENDED_TYPES_MAP
+
+
 log = logging.getLogger(__name__)
 
 
@@ -30,3 +33,9 @@ class DocumentACLMixin(object):
     def save(self, *args, **kwargs):
         self._set_default_acl()
         return super(DocumentACLMixin, self).save(*args, **kwargs)
+
+    @classmethod
+    def get_es_mapping(cls, types_map=None):
+        """ Generate ES mapping from model schema. """
+        return super(DocumentACLMixin, self).get_es_mapping(
+            types_map=EXTENDED_TYPES_MAP)

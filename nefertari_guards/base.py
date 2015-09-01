@@ -3,6 +3,16 @@ from pyramid.security import (
 from nefertari.resource import ACTIONS as NEF_ACTIONS
 
 
+ACL_TYPE_MAPPING = {
+    'type': 'nested',
+    'properties': {
+        'action': {'type': 'string'},
+        'identifier': {'type': 'string', 'index': 'not_analyzed'},
+        'permission': {'type': 'string'},
+    }
+}
+
+
 class ACLEncoderMixin(object):
     ACTIONS = {
         Allow: 'allow',
