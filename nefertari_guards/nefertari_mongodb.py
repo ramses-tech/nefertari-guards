@@ -1,6 +1,9 @@
+from __future__ import absolute_import
+
 from mongoengine import fields
+
 from nefertari_mongodb.fields import ProcessableMixin, BaseFieldMixin
-from nefertari_sqla.documents import TYPES_MAP
+from nefertari_mongodb.documents import TYPES_MAP
 
 from .base import ACLEncoderMixin, ACL_TYPE_MAPPING
 

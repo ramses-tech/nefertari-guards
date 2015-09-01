@@ -1,41 +1,48 @@
-import logging
+def get_document_mixin(engine_module):
+    """ Define and return DocumentACLMixin """
 
-from ??? import ACLField, EXTENDED_TYPES_MAP
+    import logging
+    log = logging.getLogger(__name__)
 
+    class DocumentACLMixin(object):
+        """ Document mixin that contains all needed methods to support
+        storing ACLs in database and retrieving them.
+        """
+        __abstract__ = True
+        meta = {'abstract': True}
 
-log = logging.getLogger(__name__)
+        __item_acl__ = None
+        _acl = engine_module.ACLField()
 
+        @classmethod
+        def default_item_acl(cls):
+            """ Return `cls.__item_acl__` which is used as a default
+            item ACL if other ACLs is not explicitly provided.
+            """
+            return cls.__item_acl__
 
-class DocumentACLMixin(object):
-    __abstract__ = True
-    meta = {'abstract': True}
+        def get_acl(self):
+            """ Convert stored ACL to valid Pyramid ACL. """
+            acl = engine_module.ACLField.objectify_acl(self._acl)
+            log.info('Loaded ACL from database for {}({}): {}'.format(
+                self.__class__.__name__,
+                getattr(self, self.pk_field()), acl))
+            return acl
 
-    __item_acl__ = None
-    _acl = ACLField()
+        def _set_default_acl(self):
+            """ Set default object ACL if not already set. """
+            if self._is_created() and not self._acl:
+                self._acl = self.default_item_acl()
 
-    @classmethod
-    def default_item_acl(cls):
-        return cls.__item_acl__
+        def save(self, *args, **kwargs):
+            """ Override to call `self._set_default_acl` """
+            self._set_default_acl()
+            return super(DocumentACLMixin, self).save(*args, **kwargs)
 
-    def get_acl(self):
-        """ Convert stored ACL to valid Pyramid ACL. """
-        acl = ACLField.objectify_acl(self._acl)
-        log.info('Loaded ACL from database for {}({}): {}'.format(
-            self.__class__.__name__,
-            getattr(self, self.pk_field()), acl))
-        return acl
+        @classmethod
+        def get_es_mapping(cls, types_map=None):
+            """ Generate ES mapping from model schema. """
+            return super(DocumentACLMixin, cls).get_es_mapping(
+                types_map=engine_module.EXTENDED_TYPES_MAP)
 
-    def _set_default_acl(self):
-        """ Set default object ACL if not already set. """
-        if self._is_created() and not self._acl:
-            self._acl = self.default_item_acl()
-
-    def save(self, *args, **kwargs):
-        self._set_default_acl()
-        return super(DocumentACLMixin, self).save(*args, **kwargs)
-
-    @classmethod
-    def get_es_mapping(cls, types_map=None):
-        """ Generate ES mapping from model schema. """
-        return super(DocumentACLMixin, self).get_es_mapping(
-            types_map=EXTENDED_TYPES_MAP)
+    return DocumentACLMixin

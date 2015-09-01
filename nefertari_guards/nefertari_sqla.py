@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from sqlalchemy_utils.types.json import JSONType
 from nefertari_sqla.fields import ProcessableMixin, BaseField
 from nefertari_sqla.documents import TYPES_MAP
