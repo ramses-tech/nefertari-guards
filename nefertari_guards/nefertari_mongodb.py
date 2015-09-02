@@ -26,6 +26,7 @@ class ACLField(ACLEncoderMixin, ProcessableMixin, BaseFieldMixin,
         return super(ACLField, self).__set__(instance, value)
 
 
+""" Create full map of ES mappings including ACLField """
 ACL_TYPE_MAP = {ACLField: ACL_TYPE_MAPPING}
 EXTENDED_TYPES_MAP = dict(
     list(TYPES_MAP.items()) +

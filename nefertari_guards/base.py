@@ -3,6 +3,7 @@ from pyramid.security import (
 from nefertari.resource import PERMISSIONS as NEF_PERMISSIONS
 
 
+""" Elasticsearch type mapping for ACLField """
 ACL_TYPE_MAPPING = {
     'type': 'nested',
     'properties': {
@@ -14,6 +15,10 @@ ACL_TYPE_MAPPING = {
 
 
 class ACLEncoderMixin(object):
+    """ Mixin which implements ACL encoding/decoding.
+
+    Used in sqla and mongo ACLField.
+    """
     ACTIONS = {
         Allow: 'allow',
         Deny: 'deny',

@@ -34,6 +34,7 @@ class ACLField(ACLEncoderMixin, ProcessableMixin, BaseField):
         return type_args, type_kw, cleaned_kw
 
 
+""" Create full map of ES mappings including ACLField """
 ACL_TYPE_MAP = {ACLType: ACL_TYPE_MAPPING}
 EXTENDED_TYPES_MAP = dict(
     list(TYPES_MAP.items()) +
