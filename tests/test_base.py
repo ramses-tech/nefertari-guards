@@ -25,7 +25,7 @@ class TestACLEncoderMixin(object):
     def test_validate_permission_valid(self):
         obj = ACLEncoderMixin()
         try:
-            obj._validate_permission(NEF_PERMISSIONS.values()[0])
+            obj._validate_permission(list(NEF_PERMISSIONS.values())[0])
         except ValueError:
             raise Exception('Unexpected error')
 
