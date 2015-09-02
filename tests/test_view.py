@@ -5,7 +5,7 @@ from nefertari_guards.view import ACLFilterViewMixin
 
 
 class TestACLFilterViewMixin(object):
-    @patch('nefertari.elasticsearch.ES')
+    @patch('nefertari_guards.elasticsearch.ACLFilterES')
     def test_get_collection_es_auth_enabled(self, mock_es):
         class View(ACLFilterViewMixin, BaseView):
             pass
