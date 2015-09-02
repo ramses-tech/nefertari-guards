@@ -1,6 +1,6 @@
 from pyramid.security import (
     Allow, Deny, Everyone, Authenticated, ALL_PERMISSIONS)
-from nefertari.resource import ACTIONS as NEF_ACTIONS
+from nefertari.resource import PERMISSIONS as NEF_PERMISSIONS
 
 
 ACL_TYPE_MAPPING = {
@@ -46,7 +46,7 @@ class ACLEncoderMixin(object):
         :param permission: String representing ACL permission name.
         """
         valid_perms = set(self.PERMISSIONS.values())
-        valid_perms.update(NEF_ACTIONS)
+        valid_perms.update(NEF_PERMISSIONS.values())
         if permission not in valid_perms:
             err = 'Invalid ACL permission value: {}. Valid values are: {}'
             raise ValueError(err.format(permission, ', '.join(valid_perms)))

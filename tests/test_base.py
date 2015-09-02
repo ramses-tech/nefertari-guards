@@ -4,7 +4,7 @@ from mock import patch
 from pyramid.security import (
     Allow, Deny, Everyone, Authenticated, ALL_PERMISSIONS)
 
-from nefertari_guards.base import ACLEncoderMixin, NEF_ACTIONS
+from nefertari_guards.base import ACLEncoderMixin, NEF_PERMISSIONS
 
 
 class TestACLEncoderMixin(object):
@@ -25,7 +25,7 @@ class TestACLEncoderMixin(object):
     def test_validate_permission_valid(self):
         obj = ACLEncoderMixin()
         try:
-            obj._validate_permission(NEF_ACTIONS[0])
+            obj._validate_permission(NEF_PERMISSIONS.values()[0])
         except ValueError:
             raise Exception('Unexpected error')
 

@@ -8,9 +8,6 @@ def get_document_mixin(engine_module):
         """ Document mixin that contains all needed methods to support
         storing ACLs in database and retrieving them.
         """
-        __abstract__ = True
-        meta = {'abstract': True}
-
         __item_acl__ = None
         _acl = engine_module.ACLField()
 
