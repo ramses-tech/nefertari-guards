@@ -109,6 +109,8 @@ class ACLEncoderMixin(object):
             {'action': '...', 'identifier': '...', 'permission': '...'}
         """
         string_acl = []
+        if value is None:
+            return string_acl
         for ac_entry in value:
             if isinstance(ac_entry, dict):  # ACE is already in DB format
                 string_acl.append(ac_entry)
@@ -152,6 +154,8 @@ class ACLEncoderMixin(object):
     def objectify_acl(cls, value):
         """ Convert string representation of ACL into valid Pyramid ACL. """
         object_acl = []
+        if value is None:
+            return object_acl
         for ac_entry in value:
             action = cls._objectify_action(ac_entry['action'])
             identifier = cls._objectify_identifier(ac_entry['identifier'])
