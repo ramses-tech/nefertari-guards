@@ -9,6 +9,6 @@ class ACLFilterViewMixin(object):
         params = self._query_params.copy()
 
         if self._auth_enabled:
-            params['_identifiers'] = self.request.effective_principals
+            params['_principals'] = self.request.effective_principals
 
         return ACLFilterES(self.Model.__name__).get_collection(**params)

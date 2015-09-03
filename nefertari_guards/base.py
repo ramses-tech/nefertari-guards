@@ -8,7 +8,7 @@ ACL_TYPE_MAPPING = {
     'type': 'nested',
     'properties': {
         'action': {'type': 'string'},
-        'identifier': {'type': 'string', 'index': 'not_analyzed'},
+        'principal': {'type': 'string', 'index': 'not_analyzed'},
         'permission': {'type': 'string'},
     }
 }
@@ -23,7 +23,7 @@ class ACLEncoderMixin(object):
         Allow: 'allow',
         Deny: 'deny',
     }
-    INDENTIFIERS = {
+    PRINCIPALS = {
         Everyone: 'everyone',
         Authenticated: 'authenticated',
     }
@@ -72,11 +72,11 @@ class ACLEncoderMixin(object):
         return action.strip().lower()
 
     @classmethod
-    def _stringify_identifier(cls, identifier):
-        """ Convert to string specific ACL identifiers if any are
+    def _stringify_principal(cls, principal):
+        """ Convert to string specific ACL principals if any are
         present.
         """
-        return cls.INDENTIFIERS.get(identifier, identifier)
+        return cls.PRINCIPALS.get(principal, principal)
 
     @classmethod
     def _stringify_permissions(cls, permissions):
@@ -106,7 +106,7 @@ class ACLEncoderMixin(object):
         also flattened to include a singler permission per AC entry.
 
         Structure of result AC entries is:
-            {'action': '...', 'identifier': '...', 'permission': '...'}
+            {'action': '...', 'principal': '...', 'permission': '...'}
         """
         string_acl = []
         if value is None:
@@ -115,14 +115,14 @@ class ACLEncoderMixin(object):
             if isinstance(ac_entry, dict):  # ACE is already in DB format
                 string_acl.append(ac_entry)
                 continue
-            action, identifier, permissions = ac_entry
+            action, principal, permissions = ac_entry
             action = cls._stringify_action(action)
-            identifier = cls._stringify_identifier(identifier)
+            principal = cls._stringify_principal(principal)
             permissions = cls._stringify_permissions(permissions)
             for perm in permissions:
                 string_acl.append({
                     'action': action,
-                    'identifier': identifier,
+                    'principal': principal,
                     'permission': perm,
                 })
         return string_acl
@@ -136,12 +136,12 @@ class ACLEncoderMixin(object):
         return inverted_actions[action]
 
     @classmethod
-    def _objectify_identifier(cls, identifier):
-        """ Convert string representation if special Pyramid identifiers
+    def _objectify_principal(cls, principal):
+        """ Convert string representation if special Pyramid principals
         into valid Pyramid ACL indentifier objects.
         """
-        inverted_identifiers = {v: k for k, v in cls.INDENTIFIERS.items()}
-        return inverted_identifiers.get(identifier, identifier)
+        inverted_principals = {v: k for k, v in cls.PRINCIPALS.items()}
+        return inverted_principals.get(principal, principal)
 
     @classmethod
     def _objectify_permission(cls, permission):
@@ -158,7 +158,7 @@ class ACLEncoderMixin(object):
             return object_acl
         for ac_entry in value:
             action = cls._objectify_action(ac_entry['action'])
-            identifier = cls._objectify_identifier(ac_entry['identifier'])
+            principal = cls._objectify_principal(ac_entry['principal'])
             permission = cls._objectify_permission(ac_entry['permission'])
-            object_acl.append([action, identifier, permission])
+            object_acl.append([action, principal, permission])
         return object_acl

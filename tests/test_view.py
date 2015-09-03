@@ -22,5 +22,5 @@ class TestACLFilterViewMixin(object):
         mock_es.assert_called_once_with('MyModel')
         mock_es().get_collection.assert_called_once_with(
             q='movies', foo='bar',
-            _identifiers=[3, 4, 5])
+            _principals=[3, 4, 5])
         assert result == mock_es().get_collection()

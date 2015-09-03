@@ -9,17 +9,17 @@ def includeme(config):
 
 class ACLFilterES(ES):
     """ Nefertari ES subclass that applies ACL filtering when
-    '_identifiers' param is passed.
+    '_principals' param is passed.
     """
     def build_search_params(self, params):
-        """ Override to add ACL filter params when '_identifiers'
+        """ Override to add ACL filter params when '_principals'
         param is passed.
         """
-        _identifiers = params.pop('_identifiers', None)
+        _principals = params.pop('_principals', None)
         _params = super(ACLFilterES, self).build_search_params(params)
 
-        if _identifiers:
-            permissions_query = build_acl_query(_identifiers)
+        if _principals:
+            permissions_query = build_acl_query(_principals)
             _params['body'] = {'query': {'filtered': _params['body']}}
             _params['body']['query']['filtered'].update(permissions_query)
 
@@ -35,20 +35,20 @@ def _build_acl_bool_terms(acl, action_obj):
     from nefertari_guards import engine
     acl = engine.ACLField.stringify_acl(acl)
     action = engine.ACLField._stringify_action(action_obj)
-    identifiers = sorted(set([ace['identifier'] for ace in acl]))
+    principals = sorted(set([ace['principal'] for ace in acl]))
     permissions = sorted(set([ace['permission'] for ace in acl]))
     return [
         {'term': {'_acl.action': action}},
-        {'terms': {'_acl.identifier': identifiers}},
+        {'terms': {'_acl.principal': principals}},
         {'terms': {'_acl.permission': permissions}},
     ]
 
 
-def _build_acl_from_identifiers(identifiers, action_obj):
+def _build_acl_from_principals(principals, action_obj):
     """ Build ACL with 'all' and 'view' permissions for which
-    of :identifiers: controlled by :action_obj:.
+    of :principals: controlled by :action_obj:.
 
-    :param identifiers: List of valid Pyramid ACL identifiers for
+    :param principals: List of valid Pyramid ACL principals for
         which ACL should be built.
     :param action_obj: Pyramid ACL action object (Allow, Deny) which
         should be used in all ACEs of ACL.
@@ -56,7 +56,7 @@ def _build_acl_from_identifiers(identifiers, action_obj):
     """
     from pyramid.security import ALL_PERMISSIONS
     acl = []
-    for ident in identifiers:
+    for ident in principals:
         acl += [
             (action_obj, ident, ALL_PERMISSIONS),
             (action_obj, ident, 'view'),
@@ -64,25 +64,25 @@ def _build_acl_from_identifiers(identifiers, action_obj):
     return acl
 
 
-def build_acl_query(identifiers):
+def build_acl_query(principals):
     """ Build ES query to filter collection by only getting items
     for which user has 'view' or 'all' permission and does not have
     any of these permissions denied.
 
     Object is shown when its ACL allows 'all' or 'view' permissions
-    to any one of identifiers and doesn't deny 'all' or 'view' permissions
-    to any one of identifiers.
+    to any one of principals and doesn't deny 'all' or 'view' permissions
+    to any one of principals.
     Order of ACEs in ACL doesn't affect filtering results.
 
-    :param identifiers: List of valid Pyramid ACL identifiers for
+    :param principals: List of valid Pyramid ACL principals for
         which object permissions should be allowed.
     :return: ES 'filter' query part.
     """
     from pyramid.security import Allow, Deny
 
-    # Generate ACLs from identifiers
-    allowed_acl = _build_acl_from_identifiers(identifiers, Allow)
-    denied_acl = _build_acl_from_identifiers(identifiers, Deny)
+    # Generate ACLs from principals
+    allowed_acl = _build_acl_from_principals(principals, Allow)
+    denied_acl = _build_acl_from_principals(principals, Deny)
 
     # Generate bool terms queries
     must = _build_acl_bool_terms(allowed_acl, Allow)

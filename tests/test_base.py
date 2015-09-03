@@ -40,7 +40,7 @@ class TestACLEncoderMixin(object):
     @patch.object(ACLEncoderMixin, '_validate_permission')
     def test_validate_acl(self, mock_perm, mock_action):
         obj = ACLEncoderMixin()
-        obj.validate_acl([{'action': 1, 'identifier': 2, 'permission': 3}])
+        obj.validate_acl([{'action': 1, 'principal': 2, 'permission': 3}])
         mock_action.assert_called_once_with(1)
         mock_perm.assert_called_once_with(3)
 
@@ -53,14 +53,14 @@ class TestACLEncoderMixin(object):
         obj = ACLEncoderMixin()
         assert obj._stringify_action('not allow') == 'not allow'
 
-    def test_stringify_identifier_special(self):
+    def test_stringify_principal_special(self):
         obj = ACLEncoderMixin()
-        assert obj._stringify_identifier(Everyone) == 'everyone'
-        assert obj._stringify_identifier(Authenticated) == 'authenticated'
+        assert obj._stringify_principal(Everyone) == 'everyone'
+        assert obj._stringify_principal(Authenticated) == 'authenticated'
 
-    def test_stringify_identifier(self):
+    def test_stringify_principal(self):
         obj = ACLEncoderMixin()
-        assert obj._stringify_identifier('g:admin') == 'g:admin'
+        assert obj._stringify_principal('g:admin') == 'g:admin'
 
     def test_stringify_permissions_regular_string(self):
         obj = ACLEncoderMixin()
@@ -72,7 +72,7 @@ class TestACLEncoderMixin(object):
         assert sorted(perms) == ['all', 'foo']
 
     @patch.object(ACLEncoderMixin, '_stringify_action')
-    @patch.object(ACLEncoderMixin, '_stringify_identifier')
+    @patch.object(ACLEncoderMixin, '_stringify_principal')
     @patch.object(ACLEncoderMixin, '_stringify_permissions')
     def test_stringify_acl(self, mock_perm, mock_id, mock_action):
         obj = ACLEncoderMixin()
@@ -81,8 +81,8 @@ class TestACLEncoderMixin(object):
         mock_perm.return_value = [3, 4]
         result = obj.stringify_acl([('a', 'b', 'c')])
         assert result == [
-            {'action': 1, 'identifier': 2, 'permission': 3},
-            {'action': 1, 'identifier': 2, 'permission': 4},
+            {'action': 1, 'principal': 2, 'permission': 3},
+            {'action': 1, 'principal': 2, 'permission': 4},
         ]
         mock_action.assert_called_once_with('a')
         mock_id.assert_called_once_with('b')
@@ -92,12 +92,12 @@ class TestACLEncoderMixin(object):
         assert ACLEncoderMixin._objectify_action('allow') is Allow
         assert ACLEncoderMixin._objectify_action('deny') is Deny
 
-    def test_objectify_identifier(self):
-        assert ACLEncoderMixin._objectify_identifier(
+    def test_objectify_principal(self):
+        assert ACLEncoderMixin._objectify_principal(
             'everyone') is Everyone
-        assert ACLEncoderMixin._objectify_identifier(
+        assert ACLEncoderMixin._objectify_principal(
             'authenticated') is Authenticated
-        assert ACLEncoderMixin._objectify_identifier('foo') == 'foo'
+        assert ACLEncoderMixin._objectify_principal('foo') == 'foo'
 
     def test_objectify_permission(self):
         assert ACLEncoderMixin._objectify_permission(
@@ -105,14 +105,14 @@ class TestACLEncoderMixin(object):
         assert ACLEncoderMixin._objectify_permission('foo') == 'foo'
 
     @patch.object(ACLEncoderMixin, '_objectify_action')
-    @patch.object(ACLEncoderMixin, '_objectify_identifier')
+    @patch.object(ACLEncoderMixin, '_objectify_principal')
     @patch.object(ACLEncoderMixin, '_objectify_permission')
     def test_objectify_acl(self, mock_perm, mock_id, mock_action):
         mock_action.return_value = 1
         mock_id.return_value = 2
         mock_perm.return_value = [3]
         result = ACLEncoderMixin.objectify_acl([
-            {'action': 'a', 'identifier': 'b', 'permission': 'c'}
+            {'action': 'a', 'principal': 'b', 'permission': 'c'}
         ])
         assert result == [[1, 2, [3]]]
         mock_action.assert_called_once_with('a')
