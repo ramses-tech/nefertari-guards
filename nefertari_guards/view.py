@@ -1,3 +1,6 @@
+from nefertari_guards.elasticsearch import ACLFilterES
+
+
 class ACLFilterViewMixin(object):
     """ Base view class that applies ACL filtering. """
 
@@ -5,7 +8,6 @@ class ACLFilterViewMixin(object):
         """ Override method to apply ACL filtering when authentication
         is enabled.
         """
-        from nefertari_guards.elasticsearch import ACLFilterES
         params = self._query_params.copy()
 
         if self._auth_enabled:
