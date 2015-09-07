@@ -37,9 +37,9 @@ def get_document_mixin(engine_module):
             return super(DocumentACLMixin, self).save(*args, **kwargs)
 
         @classmethod
-        def get_es_mapping(cls, types_map=None):
+        def get_es_mapping(cls, types_map=None, **kwargs):
             """ Generate ES mapping from model schema. """
             return super(DocumentACLMixin, cls).get_es_mapping(
-                types_map=engine_module.EXTENDED_TYPES_MAP)
+                types_map=engine_module.EXTENDED_TYPES_MAP, **kwargs)
 
     return DocumentACLMixin
