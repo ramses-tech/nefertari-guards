@@ -2,14 +2,13 @@ from __future__ import absolute_import
 
 from mongoengine import fields
 
-from nefertari_mongodb.fields import ProcessableMixin, BaseFieldMixin
+from nefertari_mongodb.fields import BaseFieldMixin
 from nefertari_mongodb.documents import TYPES_MAP
 
 from .base import ACLEncoderMixin, ACL_TYPE_MAPPING
 
 
-class ACLField(ACLEncoderMixin, ProcessableMixin, BaseFieldMixin,
-               fields.ListField):
+class ACLField(ACLEncoderMixin, BaseFieldMixin, fields.ListField):
     """ Subclass of `ListField` used to store Pyramid ACL.
 
     ACL is stored as nested list with all Pyramid special actions,
