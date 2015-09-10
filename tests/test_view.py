@@ -17,10 +17,8 @@ class TestACLFilterViewMixin(object):
         view._auth_enabled = True
         view.Model = Mock(__name__='MyModel')
         view._query_params['q'] = 'movies'
-        view.request.effective_principals = [3, 4, 5]
         result = view.get_collection_es()
         mock_es.assert_called_once_with('MyModel')
         mock_es().get_collection.assert_called_once_with(
-            q='movies', foo='bar',
-            _principals=[3, 4, 5])
+            q='movies', foo='bar', request=request)
         assert result == mock_es().get_collection()

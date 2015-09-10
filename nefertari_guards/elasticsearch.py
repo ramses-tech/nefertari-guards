@@ -1,5 +1,7 @@
 from nefertari.elasticsearch import ES
-from nefertari.utils import dictset
+from nefertari.utils import dictset, DataProxy
+
+from nefertari_guards import engine
 
 
 def includeme(config):
@@ -9,7 +11,7 @@ def includeme(config):
 
 class ACLFilterES(ES):
     """ Nefertari ES subclass that applies ACL filtering when
-    '_principals' param is passed.
+    'request' param is passed and auth is enabled.
     """
     def build_search_params(self, params):
         """ Override to add ACL filter params when '_principals'
@@ -28,14 +30,14 @@ class ACLFilterES(ES):
     def get_collection(self, request=None, **params):
         auth_enabled = (
             request is not None and
-            dictset(request.registry.settings).as_bool('auth'))
+            dictset(request.registry.settings).asbool('auth'))
         if auth_enabled:
             params['_principals'] = request.effective_principals
         documents = super(ACLFilterES, self).get_collection(**params)
 
-        # TODO: Filter documents relationships here per-object
         if auth_enabled:
-            pass
+            return [check_relations_permissions(request, doc)
+                    for doc in documents]
 
         return documents
 
@@ -43,13 +45,40 @@ class ACLFilterES(ES):
         document = super(ACLFilterES, self).get_resource(**kw)
         auth_enabled = (
             request is not None and
-            dictset(request.registry.settings).as_bool('auth'))
+            dictset(request.registry.settings).asbool('auth'))
 
-        # TODO: Filter document relationships here
         if auth_enabled:
-            pass
+            return check_relations_permissions(request, document)
 
         return document
+
+
+def check_relations_permissions(request, document):
+    if isinstance(document, DataProxy):
+        data = document._data
+    else:
+        data = document
+
+    for key, value in data.items():
+        if isinstance(value, (list, tuple)):
+            checked = [_check_permissions(request, val) for val in value]
+            checked = [val for val in checked if val is not None]
+        else:
+            checked = _check_permissions(request, value)
+        data[key] = checked
+    return document
+
+
+def _check_permissions(request, document):
+    # Make sure `document` is a valid ES document
+    if not (isinstance(document, dict) and '_type' in document):
+        return document
+
+    # Check whether document can be displayed to user
+    acl = engine.ACLField.objectify_acl(document.get('_acl', []))
+    context = dictset({'__acl__': acl})
+    if request.has_permission('view', context):
+        return check_relations_permissions(request, document)
 
 
 def _build_acl_bool_terms(acl, action_obj):
@@ -58,7 +87,6 @@ def _build_acl_bool_terms(acl, action_obj):
     :param acl: Valid Pyramid ACL used to build a bool filter query.
     :param action_obj: Pyramid ACL action object (Allow, Deny)
     """
-    from nefertari_guards import engine
     acl = engine.ACLField.stringify_acl(acl)
     action = engine.ACLField._stringify_action(action_obj)
     principals = sorted(set([ace['principal'] for ace in acl]))
