@@ -104,3 +104,11 @@ def build_acl_query(principals):
             }
         }
     }
+
+
+def get_es_item_acl(item):
+    """ Get item ACL and return objectified version or it. """
+    from nefertari_guards import engine as guards_engine
+    acl = getattr(item, '_acl', ())
+    return guards_engine.ACLField.objectify_acl([
+        ace._data for ace in acl])
