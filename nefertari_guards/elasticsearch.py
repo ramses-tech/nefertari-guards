@@ -25,17 +25,31 @@ class ACLFilterES(ES):
 
         return _params
 
-    def get_collection(self, **params):
-        _principals = params.get('_principals', None)
-        objects = super(ACLFilterES, self).get_collection(**params)
-        # TODO: Filter objects relationships here per-object
-        return objects
+    def get_collection(self, request=None, **params):
+        auth_enabled = (
+            request is not None and
+            dictset(request.registry.settings).as_bool('auth'))
+        if auth_enabled:
+            params['_principals'] = request.effective_principals
+        documents = super(ACLFilterES, self).get_collection(**params)
 
-    def get_resource(self, **kw):
-        _principals = kw.pop('_principals', None)
-        obj = super(ACLFilterES, self).get_resource(**kw)
-        # TODO: Filter object relationships here
-        return obj
+        # TODO: Filter documents relationships here per-object
+        if auth_enabled:
+            pass
+
+        return documents
+
+    def get_resource(self, request=None, **kw):
+        document = super(ACLFilterES, self).get_resource(**kw)
+        auth_enabled = (
+            request is not None and
+            dictset(request.registry.settings).as_bool('auth'))
+
+        # TODO: Filter document relationships here
+        if auth_enabled:
+            pass
+
+        return document
 
 
 def _build_acl_bool_terms(acl, action_obj):
