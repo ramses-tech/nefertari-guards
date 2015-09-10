@@ -25,6 +25,18 @@ class ACLFilterES(ES):
 
         return _params
 
+    def get_collection(self, **params):
+        _principals = params.get('_principals', None)
+        objects = super(ACLFilterES, self).get_collection(**params)
+        # TODO: Filter objects relationships here per-object
+        return objects
+
+    def get_resource(self, **kw):
+        _principals = kw.pop('_principals', None)
+        obj = super(ACLFilterES, self).get_resource(**kw)
+        # TODO: Filter object relationships here
+        return obj
+
 
 def _build_acl_bool_terms(acl, action_obj):
     """ Build ACL bool filter from given Pyramid ACL.
@@ -108,7 +120,7 @@ def build_acl_query(principals):
 
 def get_es_item_acl(item):
     """ Get item ACL and return objectified version or it. """
-    from nefertari_guards import engine as guards_engine
+    from nefertari_guards import engine
     acl = getattr(item, '_acl', ())
-    return guards_engine.ACLField.objectify_acl([
+    return engine.ACLField.objectify_acl([
         ace._data for ace in acl])
