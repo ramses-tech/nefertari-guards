@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 from sqlalchemy_utils.types.json import JSONType
-from nefertari_sqla.fields import ProcessableMixin, BaseField
+from nefertari_sqla.fields import BaseField
 from nefertari_sqla.documents import TYPES_MAP
 
 from .base import ACLEncoderMixin, ACL_TYPE_MAPPING
@@ -22,7 +22,7 @@ class ACLType(ACLEncoderMixin, JSONType):
         return super(ACLType, self).process_bind_param(value, dialect)
 
 
-class ACLField(ACLEncoderMixin, ProcessableMixin, BaseField):
+class ACLField(ACLEncoderMixin, BaseField):
     """ Field used to store Pyramid ACLs. """
     _sqla_type_cls = ACLType
     _type_unchanged_kwargs = ()
