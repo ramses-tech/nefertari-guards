@@ -4,4 +4,7 @@ pytest
 pytest-cov
 mock
 
+-e ../nefertari
+-e ../nefertari-mongodb
+-e ../nefertari-sqla
 -e .

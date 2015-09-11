@@ -6,6 +6,9 @@ README = open(os.path.join(here, 'README.md')).read()
 VERSION = open(os.path.join(here, 'VERSION')).read()
 
 requires = [
+    'sqlalchemy_utils',
+    'nefertari>=0.5.0',
+    'pyramid==1.5.7',
 
 ]
 
