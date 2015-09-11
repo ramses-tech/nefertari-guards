@@ -6,15 +6,14 @@ README = open(os.path.join(here, 'README.md')).read()
 VERSION = open(os.path.join(here, 'VERSION')).read()
 
 requires = [
-    'sqlalchemy_utils',
     'nefertari>=0.5.0',
-    'pyramid==1.5.7',
-
+    'pyramid',
+    'sqlalchemy_utils',
 ]
 
 setup(name='nefertari-guards',
       version=VERSION,
-      description='',
+      description='Advanced ACLs for Nefertari',
       long_description=README,
       classifiers=[
           "Programming Language :: Python",
@@ -29,7 +28,7 @@ setup(name='nefertari-guards',
       author='Brandicted',
       author_email='hello@brandicted.com',
       url='https://github.com/brandicted/nefertari-guards',
-      keywords='web pyramid pylons',
+      keywords='web pyramid pylons nefertari acl',
       packages=find_packages(),
       include_package_data=True,
       zip_safe=False,

@@ -1,10 +1,10 @@
-sphinx
-releases
+mock
 pytest
 pytest-cov
-mock
+releases
+sphinx
 
--e ../nefertari
--e ../nefertari-mongodb
--e ../nefertari-sqla
+git+https://github.com/brandicted/nefertari.git@develop#egg=nefertari
+git+https://github.com/brandicted/nefertari-mongodb.git@develop#egg=nefertari_mongodb
+git+https://github.com/brandicted/nefertari-sqla.git@develop#egg=nefertari_sqla
 -e .
