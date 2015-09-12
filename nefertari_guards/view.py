@@ -26,15 +26,10 @@ class ACLFilterViewMixin(object):
     """ Base view class that applies ACL filtering. """
 
     def get_collection_es(self):
-        """ Override method to apply ACL filtering when authentication
-        is enabled.
-        """
+        """ Override method to use ACLFilterES and pass request to it. """
         params = self._query_params.copy()
-
-        if self._auth_enabled:
-            params['_principals'] = self.request.effective_principals
-
-        return ACLFilterES(self.Model.__name__).get_collection(**params)
+        return ACLFilterES(self.Model.__name__).get_collection(
+            request=self.request, **params)
 
     def _setup_aggregation(self, aggregator=None, **kwargs):
         """ Override to use ACLESAggregator. """

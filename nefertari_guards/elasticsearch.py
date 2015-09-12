@@ -1,5 +1,7 @@
 from nefertari.elasticsearch import ES
-from nefertari.utils import dictset
+from nefertari.utils import dictset, DataProxy
+
+from nefertari_guards import engine
 
 
 def includeme(config):
@@ -9,11 +11,14 @@ def includeme(config):
 
 class ACLFilterES(ES):
     """ Nefertari ES subclass that applies ACL filtering when
-    '_principals' param is passed.
+    'request' param is passed and auth is enabled.
     """
     def build_search_params(self, params):
-        """ Override to add ACL filter params when '_principals'
+        """ Overriden to add ACL filter params when '_principals'
         param is passed.
+
+        :param params: ES query params
+        :return: ES query params
         """
         _principals = params.pop('_principals', None)
         _params = super(ACLFilterES, self).build_search_params(params)
@@ -25,6 +30,101 @@ class ACLFilterES(ES):
 
         return _params
 
+    def get_collection(self, request=None, **params):
+        """ Overriden to support ACL filtering.
+
+        When auth is enabled, adds '_principals' param to perform ACL
+        filtering during query and performs ACL filtering of results'
+        relationships.
+
+        :param request: Pyramid Request instance that represents current
+            request
+        :return: Found and ACL filtered (if auth enabled) documents
+            wrapped in DataProxy
+        """
+        auth_enabled = (
+            request is not None and
+            dictset(request.registry.settings).asbool('auth'))
+        if auth_enabled:
+            params['_principals'] = request.effective_principals
+        documents = super(ACLFilterES, self).get_collection(**params)
+
+        if auth_enabled:
+            return [check_relations_permissions(request, doc)
+                    for doc in documents]
+
+        return documents
+
+    def get_resource(self, request=None, **kw):
+        """ Overriden to support ACL filtering.
+
+        When auth is enabled, performs ACL filtering of found document's
+        relationships.
+
+        :param request: Pyramid Request instance that represents current
+            request
+        :return: Found ES document wrapped in DataProxy
+        """
+        document = super(ACLFilterES, self).get_resource(**kw)
+        auth_enabled = (
+            request is not None and
+            dictset(request.registry.settings).asbool('auth'))
+
+        if auth_enabled:
+            return check_relations_permissions(request, document)
+
+        return document
+
+
+def check_relations_permissions(request, document):
+    """ Check permissions of document relationships.
+
+    If related document can not be visible by user, it is replaced with
+    None or removed from collection display. Each related document
+    permissions are checked with `_check_permissions` function.
+
+    :param request: Pyramid Request instance that represents current
+        request
+    :param document: Either DataProxy instance or dictionary containing
+        ES document data
+    :return: Document of the same type as input one but with ACL-filtered
+        relationships
+    """
+    if isinstance(document, DataProxy):
+        data = document._data
+    else:
+        data = document
+
+    for key, value in data.items():
+        if isinstance(value, (list, tuple)):
+            checked = [_check_permissions(request, val) for val in value]
+            checked = [val for val in checked if val is not None]
+        else:
+            checked = _check_permissions(request, value)
+        data[key] = checked
+    return document
+
+
+def _check_permissions(request, document):
+    """ Check permissions of ES document.
+
+    :param request: Pyramid Request instance that represents current
+        request
+    :param document: Dict representing valid ES document
+    :return: Input document if it's not a valid document. None if user
+        doesn't have permissions to see the document. Document with
+        filtered relationships if user has permissions to see it.
+    """
+    # Make sure `document` is a valid ES document
+    if not (isinstance(document, dict) and '_type' in document):
+        return document
+
+    # Check whether document can be displayed to user
+    acl = engine.ACLField.objectify_acl(document.get('_acl', []))
+    context = dictset({'__acl__': acl})
+    if request.has_permission('view', context):
+        return check_relations_permissions(request, document)
+
 
 def _build_acl_bool_terms(acl, action_obj):
     """ Build ACL bool filter from given Pyramid ACL.
@@ -32,7 +132,6 @@ def _build_acl_bool_terms(acl, action_obj):
     :param acl: Valid Pyramid ACL used to build a bool filter query.
     :param action_obj: Pyramid ACL action object (Allow, Deny)
     """
-    from nefertari_guards import engine
     acl = engine.ACLField.stringify_acl(acl)
     action = engine.ACLField._stringify_action(action_obj)
     principals = sorted(set([ace['principal'] for ace in acl]))
@@ -104,3 +203,10 @@ def build_acl_query(principals):
             }
         }
     }
+
+
+def get_es_item_acl(item):
+    """ Get item ACL and return objectified version or it. """
+    acl = getattr(item, '_acl', ())
+    return engine.ACLField.objectify_acl([
+        ace._data for ace in acl])
