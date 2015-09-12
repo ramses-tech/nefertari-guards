@@ -29,7 +29,8 @@ def get_document_mixin(engine_module):
         def _set_default_acl(self):
             """ Set default object ACL if not already set. """
             if self._is_created() and not self._acl:
-                self._acl = self.default_item_acl()
+                acl = self.default_item_acl()
+                self._acl = engine_module.ACLField.stringify_acl(acl)
 
         def save(self, *args, **kwargs):
             """ Override to call `self._set_default_acl` """
