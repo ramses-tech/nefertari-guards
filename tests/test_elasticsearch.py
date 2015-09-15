@@ -127,8 +127,8 @@ class TestESHelpers(object):
         assert es._check_permissions(None, {'id': 1}) == {'id': 1}
 
     @patch('nefertari_guards.elasticsearch.engine')
-    @patch('nefertari_guards.elasticsearch.dictset')
-    def test__check_permissions_check_failed(self, mock_set, mock_engine):
+    @patch('nefertari_guards.elasticsearch.SimpleContext')
+    def test__check_permissions_check_failed(self, mock_ctx, mock_engine):
         request = Mock()
         request.has_permission.return_value = False
         document = {'_type': 'Story', '_acl': ['foobar']}
@@ -136,14 +136,14 @@ class TestESHelpers(object):
         mock_engine.ACLField.objectify_acl.assert_called_once_with(
             ['foobar'])
         objectified = mock_engine.ACLField.objectify_acl()
-        mock_set.assert_called_once_with({'__acl__': objectified})
-        request.has_permission.assert_any_call('view', mock_set())
+        mock_ctx.assert_called_once_with(objectified)
+        request.has_permission.assert_any_call('view', mock_ctx())
 
     @patch('nefertari_guards.elasticsearch.check_relations_permissions')
     @patch('nefertari_guards.elasticsearch.engine')
-    @patch('nefertari_guards.elasticsearch.dictset')
+    @patch('nefertari_guards.elasticsearch.SimpleContext')
     def test__check_permissions_check_succeeded(
-            self, mock_set, mock_engine, mock_check):
+            self, mock_ctx, mock_engine, mock_check):
         request = Mock()
         request.has_permission.return_value = True
         document = {'_type': 'Story', '_acl': ['foobar']}
@@ -151,8 +151,8 @@ class TestESHelpers(object):
         mock_engine.ACLField.objectify_acl.assert_called_once_with(
             ['foobar'])
         objectified = mock_engine.ACLField.objectify_acl()
-        mock_set.assert_called_once_with({'__acl__': objectified})
-        request.has_permission.assert_any_call('view', mock_set())
+        mock_ctx.assert_called_once_with(objectified)
+        request.has_permission.assert_any_call('view', mock_ctx())
         mock_check.assert_called_once_with(request, document)
         assert result == mock_check()
 

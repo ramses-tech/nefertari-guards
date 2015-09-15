@@ -105,6 +105,12 @@ def check_relations_permissions(request, document):
     return document
 
 
+class SimpleContext(object):
+    """ Simple context class used in _check_permissions. """
+    def __init__(self, acl):
+        self.__acl__ = acl
+
+
 def _check_permissions(request, document):
     """ Check permissions of ES document.
 
@@ -121,7 +127,7 @@ def _check_permissions(request, document):
 
     # Check whether document can be displayed to user
     acl = engine.ACLField.objectify_acl(document.get('_acl', []))
-    context = dictset({'__acl__': acl})
+    context = SimpleContext(acl)
     if request.has_permission('view', context):
         return check_relations_permissions(request, document)
 
