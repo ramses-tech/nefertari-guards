@@ -1,5 +1,5 @@
 from nefertari.elasticsearch import ES
-from nefertari.utils import dictset, DataProxy
+from nefertari.utils import dictset, DataProxy, is_document
 
 from nefertari_guards import engine
 
@@ -122,7 +122,7 @@ def _check_permissions(request, document):
         filtered relationships if user has permissions to see it.
     """
     # Make sure `document` is a valid ES document
-    if not (isinstance(document, dict) and '_type' in document):
+    if not is_document(document):
         return document
 
     # Check whether document can be displayed to user
