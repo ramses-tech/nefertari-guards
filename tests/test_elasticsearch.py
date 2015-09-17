@@ -200,7 +200,10 @@ class TestACLFilterES(object):
     @patch('nefertari_guards.elasticsearch.check_relations_permissions')
     @patch('nefertari_guards.elasticsearch.ES.get_collection')
     def test_get_collection_auth(self, mock_get, mock_filter):
-        mock_get.return_value = [1, 2]
+        from nefertari.elasticsearch import _ESDocs
+        docs = _ESDocs([1, 2])
+        docs._nefertari_meta = 'asd'
+        mock_get.return_value = docs
         obj = es.ACLFilterES('Foo', 'foondex', chunk_size=10)
         request = Mock(effective_principals=['user', 'admin'])
         request.registry.settings = {'auth': 'true'}

@@ -1,4 +1,4 @@
-from nefertari.elasticsearch import ES
+from nefertari.elasticsearch import ES, _ESDocs
 from nefertari.utils import dictset, DataProxy, is_document
 
 from nefertari_guards import engine
@@ -49,9 +49,12 @@ class ACLFilterES(ES):
             params['_principals'] = request.effective_principals
         documents = super(ACLFilterES, self).get_collection(**params)
 
-        if auth_enabled:
-            return [check_relations_permissions(request, doc)
-                    for doc in documents]
+        if auth_enabled and isinstance(documents, _ESDocs):
+            _nefertari_meta = documents._nefertari_meta
+            documents = _ESDocs([
+                check_relations_permissions(request, doc)
+                for doc in documents])
+            documents._nefertari_meta = _nefertari_meta
 
         return documents
 
