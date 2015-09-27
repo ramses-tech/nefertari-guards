@@ -216,30 +216,30 @@ class TestACLFilterES(object):
         ])
 
     @patch('nefertari_guards.elasticsearch.check_relations_permissions')
-    @patch('nefertari_guards.elasticsearch.ES.get_resource')
-    def test_get_resource_no_request(self, mock_get, mock_filter):
+    @patch('nefertari_guards.elasticsearch.ES.get_item')
+    def test_get_item_no_request(self, mock_get, mock_filter):
         obj = es.ACLFilterES('Foo', 'foondex', chunk_size=10)
-        obj.get_resource(foo=1)
+        obj.get_item(foo=1)
         mock_get.assert_called_once_with(foo=1)
         assert not mock_filter.called
 
     @patch('nefertari_guards.elasticsearch.check_relations_permissions')
-    @patch('nefertari_guards.elasticsearch.ES.get_resource')
-    def test_get_resource_no_auth(self, mock_get, mock_filter):
+    @patch('nefertari_guards.elasticsearch.ES.get_item')
+    def test_get_item_no_auth(self, mock_get, mock_filter):
         obj = es.ACLFilterES('Foo', 'foondex', chunk_size=10)
         request = Mock()
         request.registry.settings = {'auth': 'false'}
-        obj.get_resource(foo=1)
+        obj.get_item(foo=1)
         mock_get.assert_called_once_with(foo=1)
         assert not mock_filter.called
 
     @patch('nefertari_guards.elasticsearch.check_relations_permissions')
-    @patch('nefertari_guards.elasticsearch.ES.get_resource')
-    def test_get_resource_auth(self, mock_get, mock_filter):
+    @patch('nefertari_guards.elasticsearch.ES.get_item')
+    def test_get_item_auth(self, mock_get, mock_filter):
         mock_get.return_value = 1
         obj = es.ACLFilterES('Foo', 'foondex', chunk_size=10)
         request = Mock()
         request.registry.settings = {'auth': 'true'}
-        obj.get_resource(request=request, foo=1)
+        obj.get_item(request=request, foo=1)
         mock_get.assert_called_once_with(foo=1)
         mock_filter.assert_called_once_with(request, 1)

@@ -58,7 +58,7 @@ class ACLFilterES(ES):
 
         return documents
 
-    def get_resource(self, request=None, **kw):
+    def get_item(self, request=None, **kw):
         """ Overriden to support ACL filtering.
 
         When auth is enabled, performs ACL filtering of found document's
@@ -68,7 +68,7 @@ class ACLFilterES(ES):
             request
         :return: Found ES document wrapped in DataProxy
         """
-        document = super(ACLFilterES, self).get_resource(**kw)
+        document = super(ACLFilterES, self).get_item(**kw)
         auth_enabled = (
             request is not None and
             dictset(request.registry.settings).asbool('auth'))
