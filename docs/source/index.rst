@@ -12,4 +12,5 @@ Table of Contents
    :maxdepth: 2
 
    getting_started
+   acl_filtering
    changelog
