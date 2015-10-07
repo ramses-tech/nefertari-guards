@@ -3,8 +3,8 @@ ACL Filtering
 
 ACL filtering is one of the features of nefertari-guards. The main idea of ACL filtering is - when requesting collection (GET/PATCH/DELETE), corresponding permissions of each item are checked and if user doesn't have permission to access the item, it is dropped from resulting response.
 
-How Does It Work?
------------------
+How It Works
+------------
 
 User is considered to be allowed to see collection item in results if:
     1. Any of his principals are ``Allow``'ed either ``all`` or current request permission; AND

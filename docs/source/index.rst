@@ -13,4 +13,5 @@ Table of Contents
 
    getting_started
    acl_filtering
+   helpers
    changelog
