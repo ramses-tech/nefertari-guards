@@ -1,5 +1,6 @@
 from nefertari.elasticsearch import ES, _ESDocs
 from nefertari.utils import dictset, DataProxy, is_document
+from nefertari.resource import PERMISSIONS
 
 from nefertari_guards import engine
 
@@ -24,7 +25,8 @@ class ACLFilterES(ES):
         _params = super(ACLFilterES, self).build_search_params(params)
 
         if _principals:
-            permissions_query = build_acl_query(_principals)
+            permissions_query = build_acl_query(
+                _principals, self._req_permission)
             _params['body'] = {'query': {'filtered': _params['body']}}
             _params['body']['query']['filtered'].update(permissions_query)
 
@@ -46,6 +48,7 @@ class ACLFilterES(ES):
             request is not None and
             dictset(request.registry.settings).asbool('auth'))
         if auth_enabled:
+            self._req_permission = PERMISSIONS[request.action]
             params['_principals'] = request.effective_principals
         documents = super(ACLFilterES, self).get_collection(**params)
 
@@ -152,14 +155,16 @@ def _build_acl_bool_terms(acl, action_obj):
     ]
 
 
-def _build_acl_from_principals(principals, action_obj):
-    """ Build ACL with 'all' and 'view' permissions for which
+def _build_acl_from_principals(principals, action_obj, req_permission):
+    """ Build ACL with 'all' and `req_permission` permissions for which
     of :principals: controlled by :action_obj:.
 
     :param principals: List of valid Pyramid ACL principals for
         which ACL should be built.
     :param action_obj: Pyramid ACL action object (Allow, Deny) which
         should be used in all ACEs of ACL.
+    :param req_permission: Requested permission which is used to
+        perform ACL filtering.
     :return: Valid Pyramid ACL.
     """
     from pyramid.security import ALL_PERMISSIONS
@@ -167,30 +172,34 @@ def _build_acl_from_principals(principals, action_obj):
     for ident in principals:
         acl += [
             (action_obj, ident, ALL_PERMISSIONS),
-            (action_obj, ident, 'view'),
+            (action_obj, ident, req_permission),
         ]
     return acl
 
 
-def build_acl_query(principals):
+def build_acl_query(principals, req_permission):
     """ Build ES query to filter collection by only getting items
-    for which user has 'view' or 'all' permission and does not have
-    any of these permissions denied.
+    for which user has `req_permission` or 'all' permission and does
+    not have any of these permissions denied.
 
-    Object is shown when its ACL allows 'all' or 'view' permissions
-    to any one of principals and doesn't deny 'all' or 'view' permissions
-    to any one of principals.
+    Object is shown when its ACL allows 'all' or 'req_permission'
+    permissions to any one of principals and doesn't deny 'all' or
+    'req_permission' permissions to any one of principals.
     Order of ACEs in ACL doesn't affect filtering results.
 
     :param principals: List of valid Pyramid ACL principals for
         which object permissions should be allowed.
+    :param req_permission: Requested permission which is used to
+        perform ACL filtering.
     :return: ES 'filter' query part.
     """
     from pyramid.security import Allow, Deny
 
     # Generate ACLs from principals
-    allowed_acl = _build_acl_from_principals(principals, Allow)
-    denied_acl = _build_acl_from_principals(principals, Deny)
+    allowed_acl = _build_acl_from_principals(
+        principals, Allow, req_permission)
+    denied_acl = _build_acl_from_principals(
+        principals, Deny, req_permission)
 
     # Generate bool terms queries
     must = _build_acl_bool_terms(allowed_acl, Allow)

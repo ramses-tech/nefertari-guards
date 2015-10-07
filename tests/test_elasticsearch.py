@@ -25,22 +25,23 @@ class TestESHelpers(object):
 
     def test_build_acl_from_principals(self):
         from pyramid.security import Deny, ALL_PERMISSIONS
-        acl = es._build_acl_from_principals(['admin', 'user'], Deny)
-        assert (Deny, 'user', 'view') in acl
+        acl = es._build_acl_from_principals(
+            ['admin', 'user'], Deny, 'delete')
+        assert (Deny, 'user', 'delete') in acl
         assert (Deny, 'user', ALL_PERMISSIONS) in acl
-        assert (Deny, 'admin', 'view') in acl
+        assert (Deny, 'admin', 'delete') in acl
         assert (Deny, 'admin', ALL_PERMISSIONS) in acl
 
     @patch('nefertari_guards.elasticsearch._build_acl_bool_terms')
     @patch('nefertari_guards.elasticsearch._build_acl_from_principals')
-    def test_build_acl_query(self, build_ids, build_terms):
+    def test_build_acl_query(self, build_princ, build_terms):
         from pyramid.security import Deny, Allow
-        build_ids.return_value = [(1, 2, 3)]
+        build_princ.return_value = [(1, 2, 3)]
         build_terms.return_value = 'foo'
-        query = es.build_acl_query(['user', 'admin'])
-        build_ids.assert_has_calls([
-            call(['user', 'admin'], Allow),
-            call(['user', 'admin'], Deny),
+        query = es.build_acl_query(['user', 'admin'], 'update')
+        build_princ.assert_has_calls([
+            call(['user', 'admin'], Allow, 'update'),
+            call(['user', 'admin'], Deny, 'update'),
         ])
         build_terms.assert_has_calls([
             call([(1, 2, 3)], Allow),
@@ -162,6 +163,7 @@ class TestACLFilterES(object):
     @patch('nefertari_guards.elasticsearch.build_acl_query')
     def test_build_search_params(self, mock_build):
         obj = es.ACLFilterES('Foo', 'foondex', chunk_size=10)
+        obj._req_permission = 'view'
         mock_build.return_value = {'filter': 'zoo'}
         params = obj.build_search_params(
             {'foo': 1, '_limit': 10, '_principals': [3, 4]})
@@ -177,7 +179,7 @@ class TestACLFilterES(object):
         }
         assert params['index'] == 'foondex'
         assert params['doc_type'] == 'Foo'
-        mock_build.assert_called_once_with([3, 4])
+        mock_build.assert_called_once_with([3, 4], 'view')
 
     @patch('nefertari_guards.elasticsearch.check_relations_permissions')
     @patch('nefertari_guards.elasticsearch.ES.get_collection')
@@ -205,9 +207,12 @@ class TestACLFilterES(object):
         docs._nefertari_meta = 'asd'
         mock_get.return_value = docs
         obj = es.ACLFilterES('Foo', 'foondex', chunk_size=10)
-        request = Mock(effective_principals=['user', 'admin'])
+        request = Mock(
+            effective_principals=['user', 'admin'],
+            action='index')
         request.registry.settings = {'auth': 'true'}
         obj.get_collection(request=request, foo=1)
+        assert obj._req_permission == 'view'
         mock_get.assert_called_once_with(
             foo=1, _principals=['user', 'admin'])
         mock_filter.assert_has_calls([
