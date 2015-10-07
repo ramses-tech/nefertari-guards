@@ -19,8 +19,9 @@ Pemissions checked:
     * collection PATCH: ``all``, ``update``
     * collection DELETE: ``all``, ``delete``
 
-Note that if users sees particular items on collection GET it's guaranteed all of those items will affected by collection PATCH/DELETE. E.g. if item allows ``view`` to user but doesn't allow ``update``, that item will be visible to user on collection GET, but won't be affected by collection PATCH, as it will be filtered out.
-
+Things to consider when working with ACL filtering:
+    1. If users sees particular items on collection GET it's guaranteed all of those items will affected by collection PATCH/DELETE. E.g. if item allows ``view`` to user but doesn't allow ``update``, that item will be visible to user on collection GET, but won't be affected by collection PATCH, as it will be filtered out.
+    2. ACL filtering does not take into account (does not inherit) collection ACL.
 
 Examples
 --------
