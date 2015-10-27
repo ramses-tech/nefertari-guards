@@ -32,6 +32,13 @@ class ACLFilterES(ES):
 
         return _params
 
+    def aggregate(self, request=None, **params):
+        """ Overriden to support ACL filtering. """
+        if auth_enabled(request):
+            self._req_permission = PERMISSIONS[request.action]
+            params['_principals'] = request.effective_principals
+        return super(ACLFilterES, self).aggregate(**params)
+
     def get_collection(self, request=None, **params):
         """ Overriden to support ACL filtering.
 
@@ -44,15 +51,13 @@ class ACLFilterES(ES):
         :return: Found and ACL filtered (if auth enabled) documents
             wrapped in DataProxy
         """
-        auth_enabled = (
-            request is not None and
-            dictset(request.registry.settings).asbool('auth'))
-        if auth_enabled:
+        _auth_enabled = auth_enabled(request)
+        if _auth_enabled:
             self._req_permission = PERMISSIONS[request.action]
             params['_principals'] = request.effective_principals
         documents = super(ACLFilterES, self).get_collection(**params)
 
-        if auth_enabled and isinstance(documents, _ESDocs):
+        if _auth_enabled and isinstance(documents, _ESDocs):
             _nefertari_meta = documents._nefertari_meta
             documents = _ESDocs([
                 check_relations_permissions(request, doc)
@@ -72,14 +77,17 @@ class ACLFilterES(ES):
         :return: Found ES document wrapped in DataProxy
         """
         document = super(ACLFilterES, self).get_item(**kw)
-        auth_enabled = (
-            request is not None and
-            dictset(request.registry.settings).asbool('auth'))
 
-        if auth_enabled:
+        if auth_enabled(request):
             return check_relations_permissions(request, document)
 
         return document
+
+
+def auth_enabled(request):
+    return (
+        request is not None and
+        dictset(request.registry.settings).asbool('auth'))
 
 
 def check_relations_permissions(request, document):

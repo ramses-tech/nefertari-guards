@@ -51,4 +51,4 @@ class TestACLESAggregator(object):
         mock_es.assert_called_once_with('FooBar')
         mock_es().aggregate.assert_called_once_with(
             _aggregations_params={'foo': 1},
-            _principals=['g:user'], q='2', zoo=3)
+            request=self.DemoView.request, q='2', zoo=3)

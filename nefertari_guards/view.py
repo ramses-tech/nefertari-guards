@@ -16,10 +16,8 @@ class ACLESAggregator(ESAggregator):
         params = self._query_params.copy()
         params['_aggregations_params'] = aggregations_params
 
-        if self.view._auth_enabled:
-            params['_principals'] = self.view.request.effective_principals
-
-        return ACLFilterES(self.view.Model.__name__).aggregate(**params)
+        return ACLFilterES(self.view.Model.__name__).aggregate(
+            request=self.view.request, **params)
 
 
 class ACLFilterViewMixin(object):
