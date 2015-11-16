@@ -1,7 +1,7 @@
 from .acl_utils import (
     count_ace,
     update_ace,
-    find_containing_ace,
+    find_by_ace,
 )
 
 

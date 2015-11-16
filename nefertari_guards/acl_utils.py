@@ -17,15 +17,15 @@ from nefertari import engine
 from nefertari.elasticsearch import ES
 
 
-def count_ace():
-    pass
+def count_ace(ace, types=None):
+    return find_by_ace(ace, types, count=True)
 
 
-def update_ace():
-    pass
+def update_ace(from_ace, to_ace, types=None):
+    documents = find_by_ace(from_ace, types)
 
 
-def find_containing_ace(ace, types=None, count=False):
+def find_by_ace(ace, types=None, count=False):
     if types is None:
         types = list(engine.get_document_classes().values())
     es_types = _get_es_types(types)
@@ -66,4 +66,4 @@ def _get_es_body(ace):
             }
         }
     }
-    return {'body': body}
+    return body
