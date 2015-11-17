@@ -18,7 +18,7 @@ class AppBootstrapCmd(object):
 
     def _setup_logger(self):
         self.log = logging.getLogger()
-        self.log.setLevel(logging.WARNING)
+        self.log.setLevel(logging.ERROR)
         ch = logging.StreamHandler()
         formatter = logging.Formatter(
             '%(asctime)s - {} - %(message)s'.format(__name__))

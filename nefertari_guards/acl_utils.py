@@ -19,11 +19,20 @@ def count_ace(ace, models=None):
     :param ace: Stringified ACL entry (ACE).
     :param models: List of document classes objects of which should
         be found and counted.
-    :returns: Number of matching documents.
+    :returns: Dict of format {Model: number_of_matching_docs, ...}.
+        Number of matching documents is None if model is not Es-based.
     """
+    counts = {}
     if models is None:
         models = list(engine.get_document_classes().values())
-    return find_by_ace(ace, models, count=True)
+
+    for model in models:
+        try:
+            counts[model] = find_by_ace(ace, [model], count=True)
+        except ValueError:
+            counts[model] = None
+
+    return counts
 
 
 def update_ace(from_ace, to_ace, models=None):
@@ -38,13 +47,16 @@ def update_ace(from_ace, to_ace, models=None):
         replaced with. Value is validated.
     :param models: List of document classes objects of which should
         be found and updated.
+    :raises ValueError: If no es-based documents passed.
     """
+    ACLEncoderMixin().validate_acl([to_ace])
     if models is None:
         models = list(engine.get_document_classes().values())
-    ACLEncoderMixin().validate_acl([to_ace])
+
     documents = find_by_ace(from_ace, models)
     documents = _group_by_type(documents, models)
     document_ids = _extract_ids(documents)
+
     for model, doc_ids in document_ids.items():
         items = model.get_by_ids(doc_ids)
         _replace_docs_ace(items, from_ace, to_ace)
@@ -61,8 +73,11 @@ def find_by_ace(ace, models, count=False):
     :param count: Boolean. When True objects count is returned.
     :returns: Number of matching documents when count=True or documents
         otherwise.
+    :raises ValueError: If no es-based models passed.
     """
     es_types = _get_es_types(models)
+    if not es_types:
+        raise ValueError('No es-based models passed')
 
     params = {'body': _get_es_body(ace)}
     if count:
@@ -71,7 +86,7 @@ def find_by_ace(ace, models, count=False):
     documents = ES(es_types).get_collection(**params)
     docs_count = (documents if isinstance(documents, int)
                   else len(documents))
-    log.debug('Found {} documents that match ACE {}.'.format(
+    log.info('Found {} documents that match ACE {}.'.format(
         docs_count, str(ace)))
     return documents
 
@@ -169,7 +184,7 @@ def _replace_docs_ace(items, from_ace, to_ace):
         replaced with.
     """
     for item in items:
-        log.debug('Updating ACE in: {}'.format(str(item)))
+        log.info('Updating ACE in: {}'.format(str(item)))
         acl = deepcopy(item._acl or [])
         try:
             ace_index = acl.index(from_ace)

@@ -2,10 +2,15 @@
 CLI to count number of documents that contain particular ACE.
 Prints count of objects with matching ACE, listed by type.
 """
-
+import json
 from argparse import ArgumentParser
 
+import six
+from nefertari import engine
+from nefertari.utils import split_strip
+
 from nefertari_guards.scripts.script_utils import AppBootstrapCmd
+from nefertari_guards.acl_utils import count_ace
 
 
 def main():
@@ -39,4 +44,21 @@ class CountACECommand(AppBootstrapCmd):
         return parser.parse_args()
 
     def run(self):
-        pass
+        if self.options.models:
+            model_names = split_strip(self.options.models)
+            models = [engine.get_document_cls(name)
+                      for name in model_names]
+        else:
+            models = None
+
+        try:
+            ace = json.loads(self.options.ace)
+        except ValueError as ex:
+            raise ValueError('ACE argument is not valid JSON: {}'.format(
+                str(ex)))
+
+        counts = count_ace(ace=ace, models=models)
+        for model, count in counts.items():
+            if count is None:
+                count = 'Not es-based'
+            six.print_('{}: {}'.format(model.__name__, count))

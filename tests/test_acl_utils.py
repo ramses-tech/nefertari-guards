@@ -8,10 +8,13 @@ class TestAclUtils(object):
 
     @patch('nefertari_guards.acl_utils.engine')
     @patch('nefertari_guards.acl_utils.find_by_ace')
-    def test_count_ace_wit_models(self, mock_find, mock_eng):
-        acl_utils.count_ace(1, 2)
-        mock_find.assert_called_once_with(1, 2, count=True)
+    def test_count_ace_with_models(self, mock_find, mock_eng):
+        result = acl_utils.count_ace(1, [2, 3])
+        mock_find.assert_has_calls([
+            call(1, [2], count=True),
+            call(1, [3], count=True)])
         assert not mock_eng.get_document_classes.called
+        assert result == {2: mock_find(), 3: mock_find()}
 
     @patch('nefertari_guards.acl_utils.engine')
     @patch('nefertari_guards.acl_utils.find_by_ace')
@@ -19,6 +22,12 @@ class TestAclUtils(object):
         mock_eng.get_document_classes.return_value = {'zoo': 2}
         acl_utils.count_ace(1)
         mock_find.assert_called_with(1, [2], count=True)
+
+    @patch('nefertari_guards.acl_utils.find_by_ace')
+    def test_count_ace_valueerror(self, mock_find):
+        mock_find.side_effect = ValueError
+        result = acl_utils.count_ace(1, [2])
+        assert result == {2: None}
 
     @patch('nefertari_guards.acl_utils.ES')
     @patch('nefertari_guards.acl_utils._get_es_body')
@@ -33,6 +42,13 @@ class TestAclUtils(object):
         mock_es().get_collection.assert_called_once_with(
             _count=True, body={'username': 'admin'})
         assert result == mock_es().get_collection()
+
+    @patch('nefertari_guards.acl_utils._get_es_types')
+    def test_find_by_ace_not_es(self, mock_types):
+        mock_types.return_value = []
+        with pytest.raises(ValueError) as ex:
+            assert acl_utils.find_by_ace({}, 1)
+        assert 'No es-based models passed' in str(ex.value)
 
     @patch('nefertari_guards.acl_utils.ES')
     def test_get_es_types(self, mock_es):
