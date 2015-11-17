@@ -13,10 +13,17 @@ $ nefertari-guards.update_ace
 
 API will be almost identical, e.g. nefertari_guards.count_ace(ace={...})
 """
+import logging
 from collections import defaultdict
+from copy import deepcopy
 
 from nefertari import engine
 from nefertari.elasticsearch import ES
+
+from .base import ACLEncoderMixin
+
+
+log = logging.getLogger(__name__)
 
 
 def count_ace(ace, types=None):
@@ -34,21 +41,24 @@ def count_ace(ace, types=None):
 
 def update_ace(from_ace, to_ace, types=None):
     """ Update documents that contain ``from_ace`` with ``to_ace``.
-    ``from_ace`` is replaced with ``to_ace`` in matching documents.
+    In fact ``from_ace`` is replaced with ``to_ace`` in matching
+    documents.
 
     Look into ACLEncoderMixin.stringify_acl for details on ace format.
 
     :param from_ace: Stringified ACL entry (ACE) to match agains.
     :param to_ace: Stringified ACL entry (ACE) ``from_ace`` should be
-        replaced with.
+        replaced with. Value is validated.
     :param types: List of document classes objects of which should
         be found and updated.
     """
+    ACLEncoderMixin().validate_acl([to_ace])
     documents = find_by_ace(from_ace, types)
     documents = _group_by_type(documents)
     document_ids = _extract_ids(documents)
     for model, doc_ids in document_ids.items():
-        _update_docs_ace(model, doc_ids, from_ace, to_ace)
+        items = model.get_by_ids(doc_ids)
+        _replace_docs_ace(items, from_ace, to_ace)
 
 
 def find_by_ace(ace, types=None, count=False):
@@ -71,7 +81,12 @@ def find_by_ace(ace, types=None, count=False):
     if count:
         params['_count'] = True
 
-    return ES(es_types).get_collection(**params)
+    documents = ES(es_types).get_collection(**params)
+    docs_count = (documents if isinstance(documents, int)
+                  else len(documents))
+    log.debug('Found {} documents that match ACE {}.'.format(
+        docs_count, str(ace)))
+    return documents
 
 
 def _get_es_types(types):
@@ -152,5 +167,25 @@ def _extract_ids(documents):
     return document_ids
 
 
-def _update_docs_ace(model, doc_ids, from_ace, to_ace):
-    pass
+def _replace_docs_ace(items, from_ace, to_ace):
+    """ Replace ``from_ace`` with ``to_ace`` in each ``items``.
+
+    Look into ACLEncoderMixin.stringify_acl for details on ace format.
+
+    :param items: Db objects ACL of which should be updated.
+    :param from_ace: Stringified ACL entry (ACE) to match agains.
+    :param to_ace: Stringified ACL entry (ACE) ``from_ace`` should be
+        replaced with.
+    """
+    for item in items:
+        log.debug('Updating ACE in: {}'.format(str(item)))
+        acl = deepcopy(item._acl or [])
+        try:
+            ace_index = acl.index(from_ace)
+        except ValueError:
+            log.warn('ACE {} not found in document: {}'.format(
+                str(from_ace), str(item)))
+            continue
+        acl.pop(ace_index)
+        acl.insert(ace_index, to_ace)
+        item.update({'_acl': acl})

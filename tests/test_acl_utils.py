@@ -1,3 +1,4 @@
+import pytest
 from mock import patch, Mock, call
 
 from nefertari_guards import acl_utils
@@ -83,3 +84,81 @@ class TestAclUtils(object):
                 }
             }
         }
+
+    @patch('nefertari_guards.acl_utils.find_by_ace')
+    def test_update_ace_invalid_ace(self, mock_find):
+        with pytest.raises(ValueError) as ex:
+            acl_utils.update_ace({}, {"action": "foo"})
+        assert 'Invalid ACL action value: foo' in str(ex.value)
+
+    @patch('nefertari_guards.acl_utils._replace_docs_ace')
+    @patch('nefertari_guards.acl_utils._extract_ids')
+    @patch('nefertari_guards.acl_utils._group_by_type')
+    @patch('nefertari_guards.acl_utils.find_by_ace')
+    def test_update_ace(self, mock_find, mock_group, mock_extr, mock_upd):
+        to_ace = {
+            "action": "allow",
+            "principal": "a",
+            "permission": "view"}
+        Model = Mock()
+        Model.get_by_ids.return_value = [4, 5, 6]
+        mock_extr.return_value = {Model: [1, 2, 3]}
+        acl_utils.update_ace({'z': 1}, to_ace, 'Z')
+        mock_find.assert_called_once_with({'z': 1}, 'Z')
+        mock_group.assert_called_once_with(mock_find())
+        mock_extr.assert_called_once_with(mock_group())
+        mock_upd.assert_called_once_with(
+            [4, 5, 6], {'z': 1}, to_ace)
+        Model.get_by_ids.assert_called_once_with([1, 2, 3])
+
+    @patch('nefertari_guards.acl_utils.engine')
+    @patch('nefertari_guards.acl_utils.find_by_ace')
+    def test_update_ace_end_to_end(self, mock_find, mock_eng):
+        mock_find.return_value = [Mock(username='user12', _type='User')]
+        db_obj = Mock(_acl=[{'foo': 1}])
+        User = Mock()
+        User.pk_field.return_value = 'username'
+        User.get_by_ids.return_value = [db_obj]
+        mock_eng.get_document_cls.return_value = User
+        to_ace = {
+            "action": "allow",
+            "principal": "user12",
+            "permission": "view"}
+        acl_utils.update_ace({'foo': 1}, to_ace)
+        db_obj.update.assert_called_once_with({
+            '_acl': [to_ace]})
+
+    @patch('nefertari_guards.acl_utils.engine')
+    def test_group_by_type(self, mock_eng):
+        doc1 = Mock(_type='Foo')
+        doc2 = Mock(_type='Bar')
+        doc3 = Mock(_type='Foo')
+        mock_eng.get_document_cls.side_effect = lambda x: x
+        grouped = acl_utils._group_by_type([doc1, doc2, doc3])
+        mock_eng.get_document_cls.assert_has_calls([
+            call('Foo'), call('Bar')])
+        assert mock_eng.get_document_cls.call_count == 2
+        assert set(grouped.keys()) == {'Foo', 'Bar'}
+        assert set(grouped['Foo']) == {doc1, doc3}
+        assert set(grouped['Bar']) == {doc2}
+
+    def test_extract_ids(self):
+        doc1 = Mock(username='user12')
+        doc2 = Mock(username='admin')
+        model = Mock()
+        model.pk_field.return_value = 'username'
+        documents = {model: [doc1, doc2]}
+        ids = acl_utils._extract_ids(documents)
+        assert set(ids.keys()) == {model}
+        assert set(ids[model]) == {'user12', 'admin'}
+
+    def test_replace_docs_ace_ace_missing(self):
+        doc = Mock(_acl=[])
+        acl_utils._replace_docs_ace([doc], {'foo': 1}, {'bar': 1})
+        assert not doc.update.called
+
+    def test_replace_docs_ace(self):
+        doc = Mock(_acl=[{'baz': 1}, {'foo': 1}, {'bar': 1}])
+        acl_utils._replace_docs_ace([doc], {'foo': 1}, {'zoo': 1})
+        doc.update.assert_called_once_with(
+            {'_acl': [{'baz': 1}, {'zoo': 1}, {'bar': 1}]})
