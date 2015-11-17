@@ -37,9 +37,10 @@ class CountACECommand(object):
             required=True)
         parser.add_argument(
             '--models',
-            help=('Comma-separated list of model names to index '
-                  '(required)'),
-            required=True)
+            help=('Comma-separated list of model names objects '
+                  'of which should be counted. If not provided '
+                  'all es-based models are used.'),
+            required=False)
         parser.add_argument(
             '--params', help='Url-encoded params for each model')
         parser.add_argument('--index', help='Index name', default=None)

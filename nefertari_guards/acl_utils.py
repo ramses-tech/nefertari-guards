@@ -3,6 +3,7 @@ CLI to manage db-ACLs:
 
 $ nefertari-guards.count_ace
   --ace='{"action":"<action>","permission:"<permission>","principal":"<principal>"}'
+  --models=<list_of_document_models>
 -> returns count of objects with matching ACE, listed by type
 
 $ nefertari-guards.update_ace
@@ -36,6 +37,8 @@ def count_ace(ace, models=None):
         be found and counted.
     :returns: Number of matching documents.
     """
+    if models is None:
+        models = list(engine.get_document_classes().values())
     return find_by_ace(ace, models, count=True)
 
 
@@ -52,6 +55,8 @@ def update_ace(from_ace, to_ace, models=None):
     :param models: List of document classes objects of which should
         be found and updated.
     """
+    if models is None:
+        models = list(engine.get_document_classes().values())
     ACLEncoderMixin().validate_acl([to_ace])
     documents = find_by_ace(from_ace, models)
     documents = _group_by_type(documents, models)
@@ -61,7 +66,7 @@ def update_ace(from_ace, to_ace, models=None):
         _replace_docs_ace(items, from_ace, to_ace)
 
 
-def find_by_ace(ace, models=None, count=False):
+def find_by_ace(ace, models, count=False):
     """ Find documents of models that include ace.
 
     Look into ACLEncoderMixin.stringify_acl for details on ace format.
@@ -73,8 +78,6 @@ def find_by_ace(ace, models=None, count=False):
     :returns: Number of matching documents when count=True or documents
         otherwise.
     """
-    if models is None:
-        models = list(engine.get_document_classes().values())
     es_types = _get_es_types(models)
 
     params = {'body': _get_es_body(ace)}
