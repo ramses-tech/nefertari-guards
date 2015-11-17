@@ -19,11 +19,11 @@ def main(argv=sys.argv, quiet=False):
     ch.setFormatter(formatter)
     log.addHandler(ch)
 
-    command = ESCommand(argv, log)
+    command = CountACECommand(argv, log)
     return command.run()
 
 
-class ESCommand(object):
+class CountACECommand(object):
 
     bootstrap = (bootstrap,)
     stdout = sys.stdout
@@ -35,9 +35,6 @@ class ESCommand(object):
         parser.add_argument(
             '-c', '--config', help='config.ini (required)',
             required=True)
-        parser.add_argument(
-            '--quiet', help='Quiet mode', action='store_true',
-            default=False)
         parser.add_argument(
             '--models',
             help=('Comma-separated list of model names to index '
@@ -63,20 +60,12 @@ class ESCommand(object):
         if not self.options.config:
             return parser.print_help()
 
-        # Prevent ES.setup_mappings running on bootstrap;
-        # Restore ES._mappings_setup after bootstrap is over
-        mappings_setup = getattr(ES, '_mappings_setup', False)
-        try:
-            ES._mappings_setup = True
-            env = self.bootstrap[0](self.options.config)
-        finally:
-            ES._mappings_setup = mappings_setup
+        env = self.bootstrap[0](self.options.config)
 
         registry = env['registry']
         # Include 'nefertari.engine' to setup specific engine
         config = Configurator(settings=registry.settings)
         config.include('nefertari.engine')
-
         self.log = log
 
         if not self.options.quiet:

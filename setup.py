@@ -11,7 +11,8 @@ requires = [
     'sqlalchemy_utils',
 ]
 
-setup(name='nefertari-guards',
+setup(
+    name='nefertari-guards',
     version=VERSION,
     description='Advanced ACLs for Nefertari',
     long_description=README,
@@ -34,4 +35,10 @@ setup(name='nefertari-guards',
     zip_safe=False,
     install_requires=requires,
     tests_require=requires,
-    test_suite="nefertari_guards")
+    test_suite="nefertari_guards",
+    entry_points="""\
+    [console_scripts]
+        nefertari-guards.count_ace = nefertari_guards.scripts.count_ace:main
+        nefertari-guards.update_ace = nefertari_guards.scripts.update_ace:main
+    """,
+)

@@ -8,7 +8,7 @@ $ nefertari-guards.count_ace
 $ nefertari-guards.update_ace
   --from_ace='{"action":"<action>","permission:"<permission>","principal":"<principal>"}'
   --to_ace='{"action":"<action>","permission:"<permission>","principal":"<principal>"}'
-  --types=<list_of_document_types>
+  --models=<list_of_document_models>
 -> updates all objects one ACE at a time, option to restrict type(s)
 
 API will be almost identical, e.g. nefertari_guards.count_ace(ace={...})
@@ -26,20 +26,20 @@ from .base import ACLEncoderMixin
 log = logging.getLogger(__name__)
 
 
-def count_ace(ace, types=None):
-    """ Count number of given types documents with given ace.
+def count_ace(ace, models=None):
+    """ Count number of given models items with given ace.
 
     Look into ACLEncoderMixin.stringify_acl for details on ace format.
 
     :param ace: Stringified ACL entry (ACE).
-    :param types: List of document classes objects of which should
+    :param models: List of document classes objects of which should
         be found and counted.
     :returns: Number of matching documents.
     """
-    return find_by_ace(ace, types, count=True)
+    return find_by_ace(ace, models, count=True)
 
 
-def update_ace(from_ace, to_ace, types=None):
+def update_ace(from_ace, to_ace, models=None):
     """ Update documents that contain ``from_ace`` with ``to_ace``.
     In fact ``from_ace`` is replaced with ``to_ace`` in matching
     documents.
@@ -49,33 +49,33 @@ def update_ace(from_ace, to_ace, types=None):
     :param from_ace: Stringified ACL entry (ACE) to match agains.
     :param to_ace: Stringified ACL entry (ACE) ``from_ace`` should be
         replaced with. Value is validated.
-    :param types: List of document classes objects of which should
+    :param models: List of document classes objects of which should
         be found and updated.
     """
     ACLEncoderMixin().validate_acl([to_ace])
-    documents = find_by_ace(from_ace, types)
-    documents = _group_by_type(documents)
+    documents = find_by_ace(from_ace, models)
+    documents = _group_by_type(documents, models)
     document_ids = _extract_ids(documents)
     for model, doc_ids in document_ids.items():
         items = model.get_by_ids(doc_ids)
         _replace_docs_ace(items, from_ace, to_ace)
 
 
-def find_by_ace(ace, types=None, count=False):
-    """ Find documents of types that include ace.
+def find_by_ace(ace, models=None, count=False):
+    """ Find documents of models that include ace.
 
     Look into ACLEncoderMixin.stringify_acl for details on ace format.
 
     :param ace: Stringified ACL entry (ACE) to match agains.
-    :param types: List of document classes objects of which should
+    :param models: List of document classes objects of which should
         be found.
     :param count: Boolean. When True objects count is returned.
     :returns: Number of matching documents when count=True or documents
         otherwise.
     """
-    if types is None:
-        types = list(engine.get_document_classes().values())
-    es_types = _get_es_types(types)
+    if models is None:
+        models = list(engine.get_document_classes().values())
+    es_types = _get_es_types(models)
 
     params = {'body': _get_es_body(ace)}
     if count:
@@ -89,13 +89,13 @@ def find_by_ace(ace, types=None, count=False):
     return documents
 
 
-def _get_es_types(types):
-    """ Get ES types from document classes.
+def _get_es_types(models):
+    """ Get ES types from document model classes.
 
-    :param types: List of document classes.
+    :param models: List of document classes.
     :returns: String with ES type names joing by comma.
     """
-    type_names = [t.__name__ for t in types
+    type_names = [t.__name__ for t in models
                   if getattr(t, '_index_enabled', False)]
     es_types = [ES.src2type(name) for name in type_names]
     return ','.join(es_types)
@@ -133,14 +133,18 @@ def _get_es_body(ace):
     return body
 
 
-def _group_by_type(documents):
+def _group_by_type(documents, models=None):
     """ Group documents by document class.
 
     :param documents: List of documents to group.
+    :param models: List models classes of documents.
     :returns: Dict of grouped documents of format
         {Model: [doc1, doc2, ...]}.
     """
     doc_classes = {}
+    if models is not None:
+        doc_classes.update({model.__name__: model for model in models})
+
     grouped = defaultdict(list)
 
     for doc in documents:

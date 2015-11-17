@@ -105,7 +105,7 @@ class TestAclUtils(object):
         mock_extr.return_value = {Model: [1, 2, 3]}
         acl_utils.update_ace({'z': 1}, to_ace, 'Z')
         mock_find.assert_called_once_with({'z': 1}, 'Z')
-        mock_group.assert_called_once_with(mock_find())
+        mock_group.assert_called_once_with(mock_find(), 'Z')
         mock_extr.assert_called_once_with(mock_group())
         mock_upd.assert_called_once_with(
             [4, 5, 6], {'z': 1}, to_ace)
@@ -141,6 +141,19 @@ class TestAclUtils(object):
         assert set(grouped.keys()) == {'Foo', 'Bar'}
         assert set(grouped['Foo']) == {doc1, doc3}
         assert set(grouped['Bar']) == {doc2}
+
+    @patch('nefertari_guards.acl_utils.engine')
+    def test_group_by_type_models_passed(self, mock_eng):
+        doc1 = Mock(_type='Foo')
+        doc2 = Mock(_type='Bar')
+        FooModel = Mock(__name__='Foo')
+        BarModel = Mock(__name__='Bar')
+        grouped = acl_utils._group_by_type(
+            [doc1, doc2], [FooModel, BarModel])
+        assert not mock_eng.get_document_cls.called
+        assert set(grouped.keys()) == {FooModel, BarModel}
+        assert set(grouped[FooModel]) == {doc1}
+        assert set(grouped[BarModel]) == {doc2}
 
     def test_extract_ids(self):
         doc1 = Mock(username='user12')
