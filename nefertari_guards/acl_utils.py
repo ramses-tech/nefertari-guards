@@ -1,19 +1,3 @@
-"""
-CLI to manage db-ACLs:
-
-$ nefertari-guards.count_ace
-  --ace='{"action":"<action>","permission:"<permission>","principal":"<principal>"}'
-  --models=<list_of_document_models>
--> returns count of objects with matching ACE, listed by type
-
-$ nefertari-guards.update_ace
-  --from_ace='{"action":"<action>","permission:"<permission>","principal":"<principal>"}'
-  --to_ace='{"action":"<action>","permission:"<permission>","principal":"<principal>"}'
-  --models=<list_of_document_models>
--> updates all objects one ACE at a time, option to restrict type(s)
-
-API will be almost identical, e.g. nefertari_guards.count_ace(ace={...})
-"""
 import logging
 from collections import defaultdict
 from copy import deepcopy
