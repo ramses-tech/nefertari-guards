@@ -54,8 +54,7 @@ class CountACECommand(AppBootstrapCmd):
         try:
             ace = json.loads(self.options.ace)
         except ValueError as ex:
-            raise ValueError('ACE argument is not valid JSON: {}'.format(
-                ex))
+            raise ValueError('--ace: {}'.format(ex))
 
         counts = count_ace(ace=ace, models=models)
         six.print_('Model,Count')

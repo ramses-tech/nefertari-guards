@@ -3,9 +3,15 @@ CLI to find documents that contain particular ACE and replace that ACE
 with another ACE.
 """
 
+import json
 from argparse import ArgumentParser
 
+import six
+from nefertari import engine
+from nefertari.utils import split_strip
+
 from nefertari_guards.scripts.script_utils import AppBootstrapCmd
+from nefertari_guards.acl_utils import update_ace
 
 
 def main():
@@ -44,4 +50,31 @@ class UpdateACECommand(AppBootstrapCmd):
         return parser.parse_args()
 
     def run(self):
-        pass
+        if self.options.models:
+            model_names = split_strip(self.options.models)
+            models = [engine.get_document_cls(name)
+                      for name in model_names]
+        else:
+            models = None
+
+        try:
+            from_ace = json.loads(self.options.from_ace)
+        except ValueError as ex:
+            raise ValueError('--from_ace: {}'.format(ex))
+
+        try:
+            to_ace = json.loads(self.options.to_ace)
+        except ValueError as ex:
+            raise ValueError('--to_ace: {}'.format(ex))
+
+        six.print_('Updating documents ACE')
+
+        update_ace(from_ace=from_ace, to_ace=to_ace, models=models)
+
+        try:
+            import transaction
+            transaction.commit()
+        except:
+            pass
+
+        six.print_('Done')

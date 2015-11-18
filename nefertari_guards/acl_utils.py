@@ -42,6 +42,10 @@ def update_ace(from_ace, to_ace, models=None):
 
     Look into ACLEncoderMixin.stringify_acl for details on ace format.
 
+    **NOTE**: When using this util with SQLA outside of request cycle
+    transaction management should be done explicitly for changes
+    to be saved.
+
     :param from_ace: Stringified ACL entry (ACE) to match agains.
     :param to_ace: Stringified ACL entry (ACE) ``from_ace`` should be
         replaced with. Value is validated.
@@ -56,7 +60,6 @@ def update_ace(from_ace, to_ace, models=None):
     documents = find_by_ace(from_ace, models)
     documents = _group_by_type(documents, models)
     document_ids = _extract_ids(documents)
-
     for model, doc_ids in document_ids.items():
         items = model.get_by_ids(doc_ids)
         _replace_docs_ace(items, from_ace, to_ace)

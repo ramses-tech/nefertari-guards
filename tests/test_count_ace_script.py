@@ -14,7 +14,7 @@ class TestCountACECommand(object):
         obj.options = Mock(ace='asdasdasdasd', models='User,Story')
         with pytest.raises(ValueError) as ex:
             obj.run()
-        assert 'ACE argument is not valid JSON' in str(ex.value)
+        assert '--ace' in str(ex.value)
         mock_eng.get_document_cls.assert_has_calls([
             call('User'), call('Story')])
 
