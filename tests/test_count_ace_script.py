@@ -35,7 +35,10 @@ class TestCountACECommand(object):
         obj.options = Mock(ace='{}', models='')
         mock_count.return_value = {Mock(__name__='Foo'): None}
         obj.run()
-        mock_six.print_.assert_called_once_with('Foo: Not es-based')
+        mock_six.print_.assert_has_calls([
+            call('Model,Count'),
+            call('Foo,Not es-based'),
+        ])
 
     @patch('nefertari_guards.scripts.count_ace.engine')
     @patch('nefertari_guards.scripts.count_ace.count_ace')
@@ -49,5 +52,8 @@ class TestCountACECommand(object):
         mock_eng.get_document_cls.return_value = model
         mock_count.return_value = {model: 123}
         obj.run()
-        mock_six.print_.assert_called_once_with('Foo: 123')
+        mock_six.print_.assert_has_calls([
+            call('Model,Count'),
+            call('Foo,123'),
+        ])
         mock_count.assert_called_once_with(ace={}, models=[model])
