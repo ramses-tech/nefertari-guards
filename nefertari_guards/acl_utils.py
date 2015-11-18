@@ -189,12 +189,14 @@ def _replace_docs_ace(items, from_ace, to_ace):
     for item in items:
         log.info('Updating ACE in: {}'.format(str(item)))
         acl = deepcopy(item._acl or [])
-        try:
-            ace_index = acl.index(from_ace)
-        except ValueError:
+        if from_ace not in acl:
             log.warn('ACE {} not found in document: {}'.format(
                 str(from_ace), str(item)))
             continue
-        acl.pop(ace_index)
-        acl.insert(ace_index, to_ace)
+
+        while from_ace in acl:
+            ace_index = acl.index(from_ace)
+            acl.pop(ace_index)
+            acl.insert(ace_index, to_ace)
+
         item.update({'_acl': acl})

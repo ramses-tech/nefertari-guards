@@ -180,3 +180,9 @@ class TestAclUtils(object):
         acl_utils._replace_docs_ace([doc], {'foo': 1}, {'zoo': 1})
         doc.update.assert_called_once_with(
             {'_acl': [{'baz': 1}, {'zoo': 1}, {'bar': 1}]})
+
+    def test_replace_docs_ace_duplicate_aces(self):
+        doc = Mock(_acl=[{'foo': 1}, {'foo': 1}])
+        acl_utils._replace_docs_ace([doc], {'foo': 1}, {'foo': 2})
+        doc.update.assert_called_once_with(
+            {'_acl': [{'foo': 2}, {'foo': 2}]})
