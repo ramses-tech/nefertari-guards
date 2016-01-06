@@ -1,6 +1,7 @@
 """
-CLI to find documents that contain particular ACE and replace that ACE
-with another ACE.
+update_ace:
+    Find documents that contain a particular ACE and replace that ACE
+    with another ACE.
 """
 
 import json
@@ -20,12 +21,12 @@ def main():
 
 class UpdateACECommand(AppBootstrapCmd):
     """
-    Usage example:
-    $ nefertari-guards.update_ace
-      --config=local.ini
-      --from_ace='{"action": "allow", "principal": "user1", "permission": "view"}'
-      --to_ace='{"action": "deny", "principal": "user1", "permission": "view"}'
-      --models=User,Story
+    :Usage example:
+        $ nefertari-guards.update_ace
+        --config=local.ini
+        --from_ace='{"action": "allow", "principal": "user1", "permission": "view"}'
+        --to_ace='{"action": "deny", "principal": "user1", "permission": "view"}'
+        --models=User,Story
     """
     def _parse_options(self):
         parser = ArgumentParser(description=__doc__)

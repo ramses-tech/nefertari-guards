@@ -1,6 +1,7 @@
 """
-CLI to count number of documents that contain particular ACE.
-Prints count of objects with matching ACE, listed by type.
+count_ace:
+    Count the number of documents that contain a particular ACE.
+    Prints the count of objects with matching ACE, listed by type, in CSV format.
 """
 import json
 from argparse import ArgumentParser
@@ -19,11 +20,11 @@ def main():
 
 class CountACECommand(AppBootstrapCmd):
     """
-    Usage example:
-    $ nefertari-guards.count_ace
-      --config=local.ini
-      --ace='{"action": "allow", "principal": "user1", "permission": "view"}'
-      --models=User,Story
+    :Usage example:
+        $ nefertari-guards.count_ace
+        --config=local.ini
+        --ace='{"action": "allow", "principal": "user1", "permission": "view"}'
+        --models=User,Story
     """
     def _parse_options(self):
         parser = ArgumentParser(description=__doc__)
