@@ -1,7 +1,7 @@
 Nefertari Guards
 ================
 
-Source code: `<https://github.com/brandicted/nefertari-guards>`_
+Source code: `<https://github.com/ramses-tech/nefertari-guards>`_
 
 Advanced ACLs for Nefertari.
 
