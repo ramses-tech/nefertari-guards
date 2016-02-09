@@ -25,11 +25,12 @@ class ACLFilterES(ES):
         _params = super(ACLFilterES, self).build_search_params(params)
 
         if _principals:
+            old_body = _params['body']
             permissions_query = build_acl_query(
                 _principals, self._req_permission)
-            _params['body'] = {'query': {'filtered': _params['body']}}
-            _params['body']['query']['filtered'].update(permissions_query)
-
+            if 'query' in old_body:
+                permissions_query['must'].append(old_body['query'])
+            _params['body'] = {'query': {'bool': permissions_query}}
         return _params
 
     def aggregate(self, request=None, **params):
@@ -222,12 +223,8 @@ def build_acl_query(principals, req_permission):
         }
 
     return {
-        'filter': {
-            'bool': {
-                'must': get_bool_filter(must),
-                'must_not': get_bool_filter(must_not),
-            }
-        }
+        'must': [get_bool_filter(must)],
+        'must_not': get_bool_filter(must_not),
     }
 
 
