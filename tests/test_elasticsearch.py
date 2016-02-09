@@ -54,12 +54,8 @@ class TestESHelpers(object):
             }
         }
         assert query == {
-            'filter': {
-                'bool': {
-                    'must': must,
-                    'must_not': must_not
-                }
-            }
+            'must': [must],
+            'must_not': must_not
         }
 
     @patch('nefertari_guards.elasticsearch._check_permissions')
@@ -164,16 +160,18 @@ class TestACLFilterES(object):
     def test_build_search_params(self, mock_build):
         obj = es.ACLFilterES('Foo', 'foondex', chunk_size=10)
         obj._req_permission = 'view'
-        mock_build.return_value = {'filter': 'zoo'}
+        mock_build.return_value = {'must': ['zoo']}
         params = obj.build_search_params(
             {'foo': 1, '_limit': 10, '_principals': [3, 4]})
         assert sorted(params.keys()) == sorted([
             'body', 'doc_type', 'from_', 'size', 'index'])
         assert params['body'] == {
             'query': {
-                'filtered': {
-                    'filter': 'zoo',
-                    'query': {'query_string': {'query': 'foo:1'}}
+                'bool': {
+                    'must': [
+                        'zoo',
+                        {'query_string': {'query': 'foo:1'}}
+                    ]
                 }
             }
         }
