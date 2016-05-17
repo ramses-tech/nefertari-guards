@@ -1,7 +1,7 @@
 Changelog
 =========
 
-* :release:`0.2.0 <????-??-??>`
+* :release:`0.2.0 <2016-05-17>`
 * :feature:`12` Added CLI scripts to count/update ACEs
 * :bug:`13 major` Fixed a bug with collection items not being properly denied due to ACL inheritance
 * :support:`14` Reworked ACL filtering to support ES 2.x
